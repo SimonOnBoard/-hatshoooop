@@ -1,6 +1,6 @@
 package com.itis.javalab.dao;
 
-import com.itis.javalab.models.AuthDataDTO;
+import com.itis.javalab.dto.AuthDataDTO;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

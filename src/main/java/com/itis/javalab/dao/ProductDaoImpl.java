@@ -1,20 +1,26 @@
 package com.itis.javalab.dao;
 
+import com.itis.javalab.context.Autowired;
 import com.itis.javalab.models.Message;
 import com.itis.javalab.models.Product;
 import com.itis.javalab.models.ProductDTO;
 import com.itis.javalab.models.User;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class ProductDaoImpl implements ProductDao {
+    @Autowired
     private Connection connection;
 
     public ProductDaoImpl(Connection connection) {
         this.connection = connection;
+    }
+
+    public ProductDaoImpl() {
     }
 
     private RowMapper<Product> productRowMapper = (row) -> {
@@ -45,14 +51,15 @@ public class ProductDaoImpl implements ProductDao {
     }
 
     @Override
-    public void savePaymentAct(Long userId, Long productId, Integer count) {
+    public LocalDateTime savePaymentAct(Long userId, Long productId, Integer count) {
         try (PreparedStatement statement = connection.prepareStatement(
-                "Insert INTO payment_history (user_id, product_id, count) values (?,?,?)",
+                "Insert INTO payment_history (user_id, product_id, count,payment_time) values (?,?,?,?)",
                 Statement.RETURN_GENERATED_KEYS);) {
+            LocalDateTime now = LocalDateTime.now();
             statement.setLong(1,userId);
             statement.setLong(2,productId);
             statement.setInt(3,count);
-
+            statement.setObject(4, now);
             //Выполняем запрос и сохраняем колличество изменённых строк
             int updRows = statement.executeUpdate();
             if (updRows == 0) {
@@ -60,6 +67,7 @@ public class ProductDaoImpl implements ProductDao {
                 //Возбуждаем соответсвующее исключений
                 throw new SQLException();
             }
+            return now;
 
         } catch (SQLException e) {
             //Если сохранений провалилось, обернём пойманное исключение в непроверяемое и пробросим дальше(best-practise)
@@ -94,6 +102,11 @@ public class ProductDaoImpl implements ProductDao {
         }
         //Возвращаем полученный в результате операции ArrayList
         return result;
+    }
+
+    @Override
+    public List<ProductDTO> findAllPaymentsById(Long id) {
+        return null;
     }
 
     @Override

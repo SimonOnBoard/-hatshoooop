@@ -4,11 +4,13 @@ import com.itis.javalab.dao.ProductDao;
 import com.itis.javalab.dao.ProductDaoImpl;
 import com.itis.javalab.models.Product;
 import com.itis.javalab.models.ProductDTO;
-import com.itis.javalab.models.ShowProductDTO;
+import com.itis.javalab.dto.ShowProductDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,8 +47,9 @@ public class ProductService {
                     product1.setCount(product1.getCount() - info.getCount());
                     productDao.update(product1);
                     Long id = jsonWorker.jwt.getClaim("id").asLong();
-                    productDao.savePaymentAct(id,product1.getId(),info.getCount());
-                    BalanceService.setBalance(jsonWorker, product1.getPrice(),info.getCount());
+                    LocalDateTime now = productDao.savePaymentAct(id, product1.getId(), info.getCount());
+                    info.setDateTime(Timestamp.valueOf(now).getTime());
+                    BalanceService.setBalance(jsonWorker, product1.getPrice(), info.getCount());
                     return jsonWorker.preparePaymentSuccessMessage(info);
                 }
                 else{

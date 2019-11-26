@@ -4,15 +4,18 @@ import com.itis.javalab.dao.AuthDTODao;
 import com.itis.javalab.dao.AuthDTODaoImpl;
 import com.itis.javalab.dao.UserDao;
 import com.itis.javalab.dao.UserDaoImpl;
-import com.itis.javalab.models.AuthDataDTO;
+import com.itis.javalab.dto.AuthDataDTO;
 import com.itis.javalab.models.LoginData;
 import com.itis.javalab.models.User;
+import com.itis.javalab.servers.ChatMultiServer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 public class LoginService {
@@ -43,5 +46,12 @@ public class LoginService {
         }
         authDTODao = new AuthDTODaoImpl(connection);
         userDao = new UserDaoImpl(connection);
+    }
+
+    public static void startLoginprocess(PrintWriter out, JsonWorker jsonWorker, ChatMultiServer.ClientHandler clientHandler, List<ChatMultiServer.ClientHandler> clients) {
+        LoginData data = jsonWorker.loadLoginData();
+        String token = LoginService.checkLogin(data);
+        String jsonToSend = jsonWorker.sendLoginAnswer(token);
+        SenderService.sendCurrentLoginResult( clients, out, clientHandler, jsonToSend);
     }
 }

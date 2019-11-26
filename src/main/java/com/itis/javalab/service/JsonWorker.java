@@ -7,16 +7,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.itis.javalab.dto.MessageDTO;
+import com.itis.javalab.dto.ShowProductDTO;
 import com.itis.javalab.models.*;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.LongFunction;
 
 public class JsonWorker {
     private ObjectMapper objectMapper;

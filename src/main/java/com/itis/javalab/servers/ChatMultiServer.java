@@ -1,6 +1,7 @@
 package com.itis.javalab.servers;
 
 
+import com.itis.javalab.context.ApplicationContext;
 import com.itis.javalab.models.LoginData;
 import com.itis.javalab.service.*;
 
@@ -22,16 +23,17 @@ public class ChatMultiServer {
     private String[] properties;
     private Connection connection;
 
-    public ChatMultiServer(String[] properties) {
-        this.properties = properties;
-        LoginService.loadConfig(properties);
-        MessageService.loadConfig(properties);
-        MessageDTOTranslator.loadConfig(properties);
-        ProductService.loadConfig(properties);
-        BalanceService.loadConfig(properties);
+    public ChatMultiServer(String[] properties, ApplicationContext context) {
+        this.connection = context.getComponent(Connection.class,"connection");
+        this.properties = this.properties;
+        LoginService.loadConfig(this.properties);
+        MessageService.loadConfig(this.properties);
+        MessageDTOTranslator.loadConfig(this.properties);
+        ProductService.loadConfig(this.properties);
+        BalanceService.loadConfig(this.properties);
         clients = new CopyOnWriteArrayList<>();
         try {
-            this.connection = DriverManager.getConnection(properties[0], properties[1], properties[2]);
+            this.connection = DriverManager.getConnection(this.properties[0], this.properties[1], this.properties[2]);
         } catch (SQLException e) {
             throw new IllegalArgumentException(e);
         }
@@ -71,16 +73,15 @@ public class ChatMultiServer {
                 in = new BufferedReader(
                         new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out = new PrintWriter(this.clientSocket.getOutputStream(), true);
-
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
                     jsonWorker.loadMessage(inputLine);
                     switch (jsonWorker.getHeaderParam("typ")) {
                         case "login":
-                            loginProcess(out);
+                            LoginService.startLoginprocess(out, jsonWorker, this, clients);
                             break;
                         case "message":
-                            sendMessage();
+                            MessageService.sendMessage(jsonWorker, clients);
                             break;
                         case "logout":
                             stopClientConnection(out);
@@ -98,7 +99,7 @@ public class ChatMultiServer {
         }
 
         private void remove() {
-            if(clients.contains(this)){
+            if (clients.contains(this)) {
                 clients.remove(this);
             }
         }
@@ -106,29 +107,12 @@ public class ChatMultiServer {
         private void stopClientConnection(PrintWriter out) {
             jsonWorker.checkJWT();
             String jsonToSend = jsonWorker.sendLogout();
-            SenderService.sendToCurrentSocket(out,jsonToSend);
+            SenderService.sendToCurrentSocket(out, jsonToSend);
             clients.remove(this);
             try {
                 this.stopConnection();
             } catch (IOException e) {
                 throw new IllegalStateException(e);
-            }
-        }
-
-        private void sendMessage() {
-            jsonWorker.checkJWT();
-            String message = MessageService.getMessage(jsonWorker.getMessage());
-            String jsonToSend = jsonWorker.prepareMessage(message);
-            SenderService.send((CopyOnWriteArrayList<ClientHandler>) clients, jsonToSend);
-        }
-
-        private void loginProcess(PrintWriter out) {
-            LoginData data = jsonWorker.loadLoginData();
-            String token = LoginService.checkLogin(data);
-            if(token != null){
-                clients.add(this);
-                String jsonToSend = jsonWorker.sendLoginAnswer(token);
-                SenderService.sendToCurrentSocket(out,jsonToSend);
             }
         }
 

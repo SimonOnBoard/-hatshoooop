@@ -1,4 +1,4 @@
-package com.itis.javalab.models;
+package com.itis.javalab.dto;
 
 public class AuthDataDTO {
     private Long id;

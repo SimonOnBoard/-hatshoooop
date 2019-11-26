@@ -1,12 +1,14 @@
 package com.itis.javalab.dao;
 
-import com.itis.javalab.models.AuthDataDTO;
+import com.itis.javalab.context.Autowired;
+import com.itis.javalab.dto.AuthDataDTO;
 import com.itis.javalab.models.User;
 
 import java.sql.*;
 import java.util.*;
 
 public class UserDaoImpl implements UserDao {
+    @Autowired
     private Connection connection;
     private UserRowMapper<User> userFindRowMapper = (row, dto) -> {
         Long id = row.getLong("id");
@@ -14,7 +16,11 @@ public class UserDaoImpl implements UserDao {
         String role = row.getString("user_role");
         return new User(id, name, role, dto);
     };
+    @Autowired
     private AuthDTODao authDTODao;
+
+    public UserDaoImpl() {
+    }
 
     public UserDaoImpl(Connection connection) {
         this.connection = connection;

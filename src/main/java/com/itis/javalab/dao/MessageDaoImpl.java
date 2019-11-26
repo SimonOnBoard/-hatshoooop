@@ -1,4 +1,5 @@
 package com.itis.javalab.dao;
+import com.itis.javalab.context.Autowired;
 import com.itis.javalab.models.Message;
 
 import java.sql.*;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class MessageDaoImpl implements MessageDao {
+    @Autowired
     private Connection connection;
 
     public MessageDaoImpl(Connection connection) {

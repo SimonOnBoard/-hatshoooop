@@ -8,4 +8,5 @@ import lombok.RequiredArgsConstructor;
 public class ProductDTO {
     private String name;
     private Integer count;
+    private Long dateTime;
 }

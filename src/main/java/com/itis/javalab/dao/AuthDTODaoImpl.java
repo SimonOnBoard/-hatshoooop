@@ -1,6 +1,8 @@
 package com.itis.javalab.dao;
 
-import com.itis.javalab.models.AuthDataDTO;
+import com.itis.javalab.context.Autowired;
+import com.itis.javalab.context.Component;
+import com.itis.javalab.dto.AuthDataDTO;
 import com.itis.javalab.models.User;
 
 import java.sql.*;
@@ -8,10 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class AuthDTODaoImpl implements AuthDTODao {
+    @Autowired
     private Connection connection;
 
-    public AuthDTODaoImpl(Connection connection, RowMapper<User> userFindRowMapper) {
-        this.connection = connection;
+    public AuthDTODaoImpl() {
     }
 
     public AuthDTODaoImpl(Connection connection) {

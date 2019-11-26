@@ -5,7 +5,7 @@ import com.itis.javalab.dao.MessageDaoImpl;
 import com.itis.javalab.dao.UserDao;
 import com.itis.javalab.dao.UserDaoImpl;
 import com.itis.javalab.models.Message;
-import com.itis.javalab.models.MessageDTO;
+import com.itis.javalab.dto.MessageDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

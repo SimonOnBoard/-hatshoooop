@@ -2,11 +2,14 @@ package com.itis.javalab.service;
 
 import com.itis.javalab.dao.*;
 import com.itis.javalab.models.Message;
+import com.itis.javalab.servers.ChatMultiServer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MessageService {
     private static UserDao userDao;
@@ -40,5 +43,12 @@ public class MessageService {
 
     private static void saveMessage(String message, LocalDateTime now) {
         messageDao.save(new Message(message, now, JsonWorker.jwt.getClaim("id").asLong()));
+    }
+
+    public static void sendMessage(JsonWorker jsonWorker, List<ChatMultiServer.ClientHandler> clients ){
+        jsonWorker.checkJWT();
+        String message = MessageService.getMessage(jsonWorker.getMessage());
+        String jsonToSend = jsonWorker.prepareMessage(message);
+        SenderService.send((CopyOnWriteArrayList<ChatMultiServer.ClientHandler>) clients, jsonToSend);
     }
 }

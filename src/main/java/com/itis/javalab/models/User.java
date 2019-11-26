@@ -1,5 +1,7 @@
 package com.itis.javalab.models;
 
+import com.itis.javalab.dto.AuthDataDTO;
+
 public class User {
     private Long id;
     private String userName;
