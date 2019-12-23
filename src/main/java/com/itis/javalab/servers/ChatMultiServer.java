@@ -1,9 +1,12 @@
 package com.itis.javalab.servers;
 
 
-import com.itis.javalab.context.ApplicationContext;
-import com.itis.javalab.models.LoginData;
-import com.itis.javalab.service.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.itis.javalab.context.interfaces.AnotherApplicationContext;
+import com.itis.javalab.context.interfaces.ApplicationContext;
+import com.itis.javalab.dispatchers.RequestDispatcher;
+import com.itis.javalab.dto.interfaces.Dto;
+import com.itis.javalab.dto.system.ServiceDto;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,31 +15,17 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ChatMultiServer {
     // список клиентов
-    private List<ClientHandler> clients;
-    private String[] properties;
-    private Connection connection;
+    public List<ClientHandler> clients;
+    private AnotherApplicationContext context;
 
-    public ChatMultiServer(String[] properties, ApplicationContext context) {
-        this.connection = context.getComponent(Connection.class,"connection");
-        this.properties = this.properties;
-        LoginService.loadConfig(this.properties);
-        MessageService.loadConfig(this.properties);
-        MessageDTOTranslator.loadConfig(this.properties);
-        ProductService.loadConfig(this.properties);
-        BalanceService.loadConfig(this.properties);
+    public ChatMultiServer(AnotherApplicationContext context) {
+        this.context = context;
         clients = new CopyOnWriteArrayList<>();
-        try {
-            this.connection = DriverManager.getConnection(this.properties[0], this.properties[1], this.properties[2]);
-        } catch (SQLException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
     public void start(int port) {
@@ -60,11 +49,13 @@ public class ChatMultiServer {
         // связь с одним клиентом
         public Socket clientSocket;
         private BufferedReader in;
-        private JsonWorker jsonWorker;
+        private RequestDispatcher dispatcher;
+        private ObjectMapper objectMapper;
 
         ClientHandler(Socket socket) {
-            this.jsonWorker = new JsonWorker();
             this.clientSocket = socket;
+            this.dispatcher = new RequestDispatcher(context);
+            this.objectMapper = new ObjectMapper();
         }
 
         public void run() {
@@ -74,20 +65,22 @@ public class ChatMultiServer {
                         new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out = new PrintWriter(this.clientSocket.getOutputStream(), true);
                 String inputLine;
+                Request request = new Request();
                 while ((inputLine = in.readLine()) != null) {
-                    jsonWorker.loadMessage(inputLine);
-                    switch (jsonWorker.getHeaderParam("typ")) {
-                        case "login":
-                            LoginService.startLoginprocess(out, jsonWorker, this, clients);
+                    request.loadMessage(inputLine);
+                    Response response = this.getResponse(request);
+                    switch (response.getChatId()) {
+                        case 0:
+                            sendToCurrent(out, response.getJsonToSend(objectMapper));
+                            if (response.header.get("typ").equals("200L")) {
+                                clients.add(this);
+                            }
+                            if (response.header.get("typ").equals("logout")) {
+                                this.stopClientConnection();
+                            }
                             break;
-                        case "message":
-                            MessageService.sendMessage(jsonWorker, clients);
-                            break;
-                        case "logout":
-                            stopClientConnection(out);
-                            break;
-                        case "command":
-                            CommandDisp.getCurrentServise(out, jsonWorker);
+                        case 1:
+                            sendToAll(response.getJsonToSend(objectMapper));
                             break;
                     }
                 }
@@ -98,17 +91,53 @@ public class ChatMultiServer {
             }
         }
 
-        private void remove() {
-            if (clients.contains(this)) {
-                clients.remove(this);
+        private void sendToAll(String jsonToSend) {
+            for (ClientHandler client : clients) {
+                try {
+                    PrintWriter out = new PrintWriter(client.clientSocket.getOutputStream(), true);
+                    out.println(jsonToSend);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
             }
         }
 
-        private void stopClientConnection(PrintWriter out) {
-            jsonWorker.checkJWT();
-            String jsonToSend = jsonWorker.sendLogout();
-            SenderService.sendToCurrentSocket(out, jsonToSend);
-            clients.remove(this);
+        private void sendToCurrent(PrintWriter out, String jsonToSend) {
+            out.println(jsonToSend);
+        }
+
+        private Response getResponse(Request request) {
+            return prepareResponse(dispatcher.doDispatch(request));
+        }
+
+        private Response prepareResponse(Dto result) {
+            ServiceDto dto = (ServiceDto) result;
+            Response response = new Response();
+            response.setChatId(((ServiceDto) result).getChatId());
+            switch (dto.getService()) {
+                case 1:
+                    response.header.put("typ", (String) dto.getParametr("status"));
+                    response.header.put("bearer", (String) dto.getParametr("token"));
+                    response.payload.put("message", dto.getParametr("message"));
+                    break;
+                case 2:
+                    response.header.put("typ", (String) dto.getParametr("typ"));
+                    response.payload.put("message", dto.getParametr("message"));
+                    break;
+                case 3:
+                    response.header.put("typ", (String) dto.getParametr("typ"));
+                    response.payload.put("data", dto.getParametr("data"));
+                    break;
+                case 4:
+                    response.header.put("typ", (String) dto.getParametr("typ"));
+                    response.payload.put("product", dto.getParametr("product"));
+                    response.payload.put("message", dto.getParametr("message"));
+            }
+            return response;
+        }
+
+        private void stopClientConnection() {
+            remove();
             try {
                 this.stopConnection();
             } catch (IOException e) {
@@ -116,8 +145,15 @@ public class ChatMultiServer {
             }
         }
 
+        private void remove() {
+            if (clients.contains(this)) {
+                clients.remove(this);
+                System.out.println("Авторизованный клиент завершает подключение");
+            }
+        }
 
         private void stopConnection() throws IOException {
+            System.out.println("Подключение завершено");
             this.clientSocket.close();
             in.close();
             this.stop();

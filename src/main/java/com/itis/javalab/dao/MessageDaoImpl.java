@@ -1,20 +1,23 @@
 package com.itis.javalab.dao;
-import com.itis.javalab.context.Autowired;
+import com.itis.javalab.context.annotations.Autowired;
+import com.itis.javalab.dao.interfaces.MessageDao;
+import com.itis.javalab.dao.interfaces.RowMapper;
 import com.itis.javalab.models.Message;
+import lombok.NoArgsConstructor;
 
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+@NoArgsConstructor
 public class MessageDaoImpl implements MessageDao {
-    @Autowired
-    private Connection connection;
-
     public MessageDaoImpl(Connection connection) {
         this.connection = connection;
     }
+
+    @Autowired
+    private Connection connection;
 
     @Override
     public Optional<Message> find(Long id) {

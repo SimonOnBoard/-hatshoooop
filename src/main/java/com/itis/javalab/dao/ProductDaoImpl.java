@@ -1,26 +1,24 @@
 package com.itis.javalab.dao;
 
-import com.itis.javalab.context.Autowired;
-import com.itis.javalab.models.Message;
+import com.itis.javalab.context.annotations.Autowired;
+import com.itis.javalab.dao.interfaces.ProductDao;
+import com.itis.javalab.dao.interfaces.RowMapper;
 import com.itis.javalab.models.Product;
-import com.itis.javalab.models.ProductDTO;
-import com.itis.javalab.models.User;
+import com.itis.javalab.dto.entity.ProductDTO;
+import lombok.NoArgsConstructor;
 
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+@NoArgsConstructor
 public class ProductDaoImpl implements ProductDao {
     @Autowired
     private Connection connection;
 
     public ProductDaoImpl(Connection connection) {
         this.connection = connection;
-    }
-
-    public ProductDaoImpl() {
     }
 
     private RowMapper<Product> productRowMapper = (row) -> {

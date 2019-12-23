@@ -1,20 +1,20 @@
 package com.itis.javalab.dao;
 
-import com.itis.javalab.context.Autowired;
-import com.itis.javalab.context.Component;
-import com.itis.javalab.dto.AuthDataDTO;
-import com.itis.javalab.models.User;
+import com.itis.javalab.context.annotations.Autowired;
+import com.itis.javalab.dao.interfaces.AuthDTODao;
+import com.itis.javalab.dao.interfaces.RowMapper;
+import com.itis.javalab.dto.entity.AuthDataDTO;
+import lombok.NoArgsConstructor;
 
 import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 
+@NoArgsConstructor
 public class AuthDTODaoImpl implements AuthDTODao {
     @Autowired
     private Connection connection;
 
-    public AuthDTODaoImpl() {
-    }
 
     public AuthDTODaoImpl(Connection connection) {
         this.connection = connection;
